@@ -1,0 +1,16 @@
+---
+title: "p8105_hw2_deg2163"
+author: "Diana Ballesteros Gonzalez"
+date: "9/30/2018"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+transit_data = read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")
+```
+
