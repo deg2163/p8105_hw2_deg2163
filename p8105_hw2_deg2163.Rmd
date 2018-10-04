@@ -5,16 +5,20 @@ date: "9/30/2018"
 output: github_document
 ---
 
-## Problem 1 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# **Problem 1**
+```{r setup}
+## Loading the Library
 library(tidyverse)
 ```
 
-```{r}
-
+```{r clean_data}
 ## do i have to add col_types for transit_data or transit_data_clean?
 
+## Load the transit_data
+transit_data = 
+  read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv")
+
+## Clean the data 
 transit_data_clean = 
   read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>% 
   janitor::clean_names() %>% 
@@ -23,5 +27,80 @@ transit_data_clean =
     entry = recode(entry, "yes" = 1, "no" = 0))
 ```
 
-### Explanation
-The variables contained in this new clean data file are line, station, name, station latitude / longitude, routes served (1 through 11), entry, vending, entrance type, and ADA compliance. The first thing I did was create a new dataset called "transit_data_clean" to distinguish it from the raw dataset. Then, I read in the raw dataset and input read_csv since it was a csv file using a relative path to make sure that I am able to pull in that data set if shared with others. Then, I used the janitor package to clean up the variable names to change the names to snake and lowercase. After, I selected only the variables that were requested by including all the columns from line to vending, then adding ADA compliance to the end. I then made all the rows within the entry variable lowercase by using tolower before recoding all the yes to equal 1 and no's to equal 0. The data is not yet tidy since there are multiple variable 
+### Step by Step Explanation
+The variables contained in this new clean data file are line, station, name, station latitude / longitude, routes served (1 through 11), entry, vending, entrance type, and ADA compliance. The first thing I did was create a new dataset called "transit_data_clean" to distinguish it from the raw dataset. Then, I read in the raw dataset and input read_csv since it was a csv file using a relative path to make sure that I am able to pull in that data set if shared with others. Then, I used the janitor package to clean up the variable names to change the names to snake and lowercase. After, I selected only the variables that were requested by including all the columns from line to vending, then adding ADA compliance to the end. I then made all the rows within the entry variable lowercase by using tolower before recoding all the yes to equal 1 and no's to equal 0. The data is not yet tidy since some variables have not been recoded yet (e.g., vending).
+
+### Answering Problem 1 Questions
+```{r transit_data_distinct_df}
+## Create a new data frame with distinct stations 
+transit_data_distinct = 
+  distinct(transit_data_clean, station_name, line, .keep_all = TRUE)
+```
+* The are `r nrow(transit_data_distinct)` distinct stations. 
+
+## It won't knit...
+* There are `r sum(transit_data_distinct$ada)` stations that are ADA compliant.
+
+* The proportion of station entrances/exits without vending allow entrance is 
+`r sum(transit_data_distinct$vending) / nrow(transit_data_distinct)`
+
+Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? 
+
+```{r}
+transit_data_clean %>% 
+  separate(route, into = c("route_name","route_number","route")) %>% 
+  select(-route:route11) %>% 
+  mutate(route = replace(route, route == "1", "N"))
+
+transit_data_distinct_reformat = 
+  read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>% 
+  janitor::clean_names() %>% 
+  gather(key = route, value = route_type, route1:route11) %>%
+  separate(transit_data_clean, route, into = c("route_name_str","route_number_str","route"), sep = 5) %>% 
+  select(-route_name_str, -route_number_str) %>% 
+  mutate(route = replace(route, route == "1", "1"))
+
+```
+
+Of the stations that serve the A train, how many are ADA compliant?
+```{r}
+
+  
+
+```
+
+
+# **Problem 2**
+## How to include cell_cols(), keep getting error message 
+```{r}
+water_wheels = 
+  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 1, range = cell_cols("A:N"))
+  
+water_wheels_clean = 
+  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", range = "A2:N336") %>% 
+  janitor::clean_names() %>% 
+  filter(!is.na(dumpster)) %>% 
+  mutate(sports_balls = round(as.integer(sports_balls)))
+```
+
+
+## Precipitation 
+```{r}
+precipitation_2017_clean = 
+  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 4, range = "A2:B14") %>% 
+  janitor::clean_names()  %>% 
+  mutate(year = 2017)
+
+precipitation_2016_clean = 
+  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 5, range = "A2:B14") %>% 
+  janitor::clean_names() %>% 
+  mutate(year = 2016)
+
+precipitation_data = 
+  left_join(precipitation_2016_clean, precipitation_2017_clean, by = "month") %>% 
+  mutate(month = month.name)
+```
+
+## Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in both resulting datasets, and give examples of key variables. For available data, what was the total precipitation in 2017? What was the median number of sports balls in a dumpster in 2016?
+
+
