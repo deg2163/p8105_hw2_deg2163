@@ -34,50 +34,44 @@ The variables contained in this new clean data file are line, station, name, sta
 ```{r transit_data_distinct_df}
 ## Create a new data frame with distinct stations 
 transit_data_distinct = 
-  distinct(transit_data_clean, station_name, line, .keep_all = TRUE)
+  distinct(transit_data_clean, station_name, line, .keep_all = TRUE) %>% 
+  mutate(ada = as.logical(ada), 
+         vending = as.logical(vending))
 ```
 * The are `r nrow(transit_data_distinct)` distinct stations. 
 
-## It won't knit...
 * There are `r sum(transit_data_distinct$ada)` stations that are ADA compliant.
 
+## It won't knit...
 * The proportion of station entrances/exits without vending allow entrance is 
-`r sum(transit_data_distinct$vending) / nrow(transit_data_distinct)`
+`r sum(transit_data_distinct$vending)/nrow(transit_data_distinct)`
 
 Reformat data so that route number and route name are distinct variables. How many distinct stations serve the A train? 
 
 ```{r}
 transit_data_clean %>% 
   separate(route, into = c("route_name","route_number","route")) %>% 
-  select(-route:route11) %>% 
+  select(-route1:route11) %>% 
   mutate(route = replace(route, route == "1", "N"))
 
 transit_data_distinct_reformat = 
   read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>% 
   janitor::clean_names() %>% 
-  gather(key = route, value = route_type, route1:route11) %>%
-  separate(transit_data_clean, route, into = c("route_name_str","route_number_str","route"), sep = 5) %>% 
+  gather(key = "route", value = "route_number", route1:route11) %>%
+  separate(route, into = c("route_name_str","route_number_str","route"), 
+           sep = 5) %>% 
   select(-route_name_str, -route_number_str) %>% 
   mutate(route = replace(route, route == "1", "1"))
-
 ```
 
 Of the stations that serve the A train, how many are ADA compliant?
-```{r}
-
-  
-
-```
-
 
 # **Problem 2**
 ## How to include cell_cols(), keep getting error message 
 ```{r}
-water_wheels = 
-  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 1, range = cell_cols("A:N"))
-  
 water_wheels_clean = 
-  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", range = "A2:N336") %>% 
+  readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 1, 
+                     range = "A2:N336") %>% 
   janitor::clean_names() %>% 
   filter(!is.na(dumpster)) %>% 
   mutate(sports_balls = round(as.integer(sports_balls)))
@@ -86,21 +80,88 @@ water_wheels_clean =
 
 ## Precipitation 
 ```{r}
+## load the precipitation_2017 data 
 precipitation_2017_clean = 
   readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 4, range = "A2:B14") %>% 
   janitor::clean_names()  %>% 
   mutate(year = 2017)
 
+## load the precipitation_2016 data 
 precipitation_2016_clean = 
   readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 5, range = "A2:B14") %>% 
   janitor::clean_names() %>% 
   mutate(year = 2016)
 
 precipitation_data = 
-  left_join(precipitation_2016_clean, precipitation_2017_clean, by = "month") %>% 
-  mutate(month = month.name)
+  bind_rows(precipitation_2016_clean, precipitation_2017_clean) %>% 
+  mutate(month = month.name[month])
 ```
 
 ## Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in both resulting datasets, and give examples of key variables. For available data, what was the total precipitation in 2017? What was the median number of sports balls in a dumpster in 2016?
+
+* The number of observations in the water_wheels_clean data set is `r nrow(water_wheels_clean)`. 
+* The number of observations in the precipitation data set is `r nrow(precipitation_data)`.
+* Some examples of key variables for Mr.Water Wheels are 
+
+What are key variables? You can choose what you want to say. 
+
+For the median, use summarize fxn 
+
+# *Problem 3*
+```{r}
+# install.packages("devtools")
+devtools::install_github("p8105/p8105.datasets")
+library(p8105.datasets)
+
+data("brfss_smart2010")
+
+brfss_smart2010 = 
+   brfss_smart2010 %>% 
+   janitor::clean_names() %>% 
+   filter(topic == "Overall Health") %>% 
+   select(-class, -topic, -question, -sample_size, -(confidence_limit_low:geo_location)) %>% 
+   spread(., key = response, value = data_value) %>%
+   janitor::clean_names() %>% 
+   mutate(excellent_very_good = excellent + very_good)
+```
+
+```{r}
+## How many unique locations are included in the dataset?
+count(distinct(brfss_smart2010, locationdesc))
+
+## Is every state represented?
+count(distinct(brfss_smart2010, locationabbr)) 
+
+## In 2002, what is the median of the “Excellent” response value?
+summarize(brfss_smart2010, median(excellent, year = 2002, na.rm = TRUE))
+
+## Make a histogram of “Excellent” response values in the year 2002.
+
+brfss_smart2010 %>% 
+  filter(year == "2002") %>% 
+  ggplot(aes(x = excellent)) + 
+  geom_histogram(binwidth = 0.55) + 
+  labs(
+    title = "Excellent Response Values in 2002",
+    x = "Excellent Data Values",
+    y = "Frequency",
+    caption = "Data from the brfss_smart2010 package"
+  ) + 
+  theme_bw() 
+
+
+## Make a scatterplot showing the proportion of “Excellent” response values in New York County and Queens County (both in NY State) in each year from 2002 to 2010.
+brfss_smart2010 %>% 
+  filter(year <"2002") %>% 
+  ggplot(aes(x = excellent)) + 
+  geom_histogram(binwidth = 0.55) + 
+  labs(
+    title = "Excellent Response Values in 2002",
+    x = "Excellent Data Values",
+    y = "Frequency",
+    caption = "Data from the brfss_smart2010 package"
+  ) + 
+  theme_bw() 
+```
 
 
