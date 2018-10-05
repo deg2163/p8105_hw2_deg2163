@@ -7,7 +7,14 @@ output: github_document
 
 # **Problem 1**
 ```{r setup}
-## Loading the Library
+## Set up 
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%")
+
+## Loading the library
 library(tidyverse)
 ```
 
@@ -133,14 +140,16 @@ count(distinct(brfss_smart2010, locationdesc))
 count(distinct(brfss_smart2010, locationabbr)) 
 
 ## In 2002, what is the median of the “Excellent” response value?
-summarize(brfss_smart2010, median(excellent, year = 2002, na.rm = TRUE))
+brfss_smart2010 %>% 
+  filter(year == 2002) %>% 
+  summarize(median(excellent, na.rm = TRUE))
 
 ## Make a histogram of “Excellent” response values in the year 2002.
 
 brfss_smart2010 %>% 
-  filter(year == "2002") %>% 
+  filter(year == 2002) %>% 
   ggplot(aes(x = excellent)) + 
-  geom_histogram(binwidth = 0.55) + 
+  geom_histogram(binwidth = 0.55, fill = "Blue") + 
   labs(
     title = "Excellent Response Values in 2002",
     x = "Excellent Data Values",
@@ -151,17 +160,25 @@ brfss_smart2010 %>%
 
 
 ## Make a scatterplot showing the proportion of “Excellent” response values in New York County and Queens County (both in NY State) in each year from 2002 to 2010.
+
 brfss_smart2010 %>% 
-  filter(year <"2002") %>% 
-  ggplot(aes(x = excellent)) + 
-  geom_histogram(binwidth = 0.55) + 
+  filter(locationdesc == "NY - Queens County" | locationdesc ==  "NY - New York County") %>% 
+  mutate(prop_excellent =  
+    excellent / (excellent + fair + good + poor + very_good)
+  ) %>% 
+  ggplot(aes(x = year, y = prop_excellent, color = locationdesc)) +
+  geom_point() + 
   labs(
-    title = "Excellent Response Values in 2002",
-    x = "Excellent Data Values",
-    y = "Frequency",
+    title = "Proportion of Excellent Responses from 2002-2010",
+    x = "Year",
+    y = "Proportion of Excellent Response",
     caption = "Data from the brfss_smart2010 package"
   ) + 
-  theme_bw() 
+  viridis::scale_color_viridis(
+    locationdesc = "Location", 
+    discrete = TRUE
+  ) + 
+  theme_bw() + 
+  theme(legend.position = "bottom")
 ```
-
 
