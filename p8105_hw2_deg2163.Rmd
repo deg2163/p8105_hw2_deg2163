@@ -39,7 +39,7 @@ transit_data_clean =
 ### Step by Step Explanation
 The variables contained in this new clean data file are line, station, name, station latitude / longitude, routes served (1 through 11), entry, vending, entrance type, and ADA compliance. The first thing I did was create a new dataset called "transit_data_clean" to distinguish it from the raw dataset. Then, I read in the raw dataset and input read_csv since it was a csv file using a relative path to make sure that I am able to pull in that data set if shared with others. Then, I used the janitor package to clean up the variable names to change the names to snake and lowercase. After, I selected only the variables that were requested by including all the columns from line to vending, then adding ADA compliance to the end. I then made all the rows within the entry variable lowercase by using tolower before recoding all the yes to equal 1 and no's to equal 0. The data is not yet tidy since some variables have not been recoded yet (e.g., vending).
 
-### Problem 1 Questions/Answers
+### Problem 1 Answers
 ```{r transit_data_distinct_df}
 ## Created a new table with distinct stations 
 transit_data_distinct = 
@@ -74,9 +74,7 @@ water_wheels_clean =
   mutate(sports_balls = round(as.integer(sports_balls)))
 ```
 
-
-## Precipitation 
-```{r}
+```{r precipitation_data}
 ## load the precipitation_2017 data 
 precipitation_2017_clean = 
   readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 4, range = "A2:B14") %>% 
@@ -95,21 +93,24 @@ precipitation_data =
   mutate(month = month.name[month])
 ```
 
+### Problem 2 Answers
 * The number of observations in the water_wheels_clean data set is `r nrow(water_wheels_clean)`.
 * The number of observations in the precipitation data set is `r nrow(precipitation_data)`.
 * Some examples of key variables for Mr. Water Wheels are month, year, and weight_tons. Some examples of key variables for precipitation_data are month, year, and total precipitation during that year. 
-* For available data, the total precipitation in 2017 was `r sum(precipitation_2017_clean$total)` 
+* For available data, the total precipitation in 2017 was `r sum(precipitation_2017_clean$total)`
 * The median number of sports balls in a dumpster in 2016 is `r water_wheels_clean %>% filter(year == "2016") %>% summarize(median(sports_balls))` 
 
 
 # **Problem 3**
-```{r}
+```{r setup_problem_3}
 # install.packages("devtools")
 devtools::install_github("p8105/p8105.datasets")
+
+## loading the library and obtaining data
 library(p8105.datasets)
 data("brfss_smart2010")
 
-## creating the brfss_smart_df
+## creating the brfss_smart2010_df
 brfss_smart2010 = 
    brfss_smart2010 %>% 
    janitor::clean_names() %>% 
@@ -120,24 +121,17 @@ brfss_smart2010 =
    mutate(excellent_very_good = excellent + very_good)
 ```
 
-```{r}
-## How many unique locations are included in the dataset?
-count(distinct(brfss_smart2010, locationdesc))
+### Problem 3 Answers
+* There are `r count(distinct(brfss_smart2010, locationdesc))` unique location included in the database
+* Every state is represented. In fact `r count(distinct(brfss_smart2010, locationabbr))` states (including Washington DC) are represented. 
+* The median of the “Excellent” response value is `r brfss_smart2010 %>% filter(year == 2002) %>% summarize(median(excellent, na.rm = TRUE))`
 
-## Is every state represented?
-count(distinct(brfss_smart2010, locationabbr)) 
-
-## In 2002, what is the median of the “Excellent” response value?
-brfss_smart2010 %>% 
-  filter(year == 2002) %>% 
-  summarize(median(excellent, na.rm = TRUE))
-
-## Make a histogram of “Excellent” response values in the year 2002.
-
+```{r problem_3_answers}
+## A histogram of “Excellent” response values in the year 2002.
 brfss_smart2010 %>% 
   filter(year == 2002) %>% 
   ggplot(aes(x = excellent)) + 
-  geom_histogram(binwidth = 0.55, fill = "Blue") + 
+  geom_histogram(binwidth = 0.50, fill = "Blue") + 
   labs(
     title = "Excellent Response Values in 2002",
     x = "Excellent Data Values",
@@ -146,9 +140,7 @@ brfss_smart2010 %>%
   ) + 
   theme_bw() 
 
-
-## Make a scatterplot showing the proportion of “Excellent” response values in 
-## New York County and Queens County (both in NY State) in each year from 2002 to 2010.
+## Created a scatterplot
 brfss_smart2010 %>% 
   filter(locationdesc == "NY - Queens County" | locationdesc ==  "NY - New York County") %>% 
   mutate(prop_excellent =  
