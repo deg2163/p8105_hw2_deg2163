@@ -39,8 +39,8 @@ transit_data_clean =
 ### Step by Step Explanation
 The variables contained in this new clean data file are line, station, name, station latitude / longitude, routes served (1 through 11), entry, vending, entrance type, and ADA compliance. The first thing I did was create a new dataset called "transit_data_clean" to distinguish it from the raw dataset. Then, I read in the raw dataset and input read_csv since it was a csv file using a relative path to make sure that I am able to pull in that data set if shared with others. Then, I used the janitor package to clean up the variable names to change the names to snake and lowercase. After, I selected only the variables that were requested by including all the columns from line to vending, then adding ADA compliance to the end. I then made all the rows within the entry variable lowercase by using tolower before recoding all the yes to equal 1 and no's to equal 0. The data is not yet tidy since some variables have not been recoded yet (e.g., vending).
 
-### Answering Problem 1 Questions
-```{r transit_data_distinct_df, message=FALSE}
+### Problem 1 Questions/Answers
+```{r transit_data_distinct_df}
 ## Created a new table with distinct stations 
 transit_data_distinct = 
   distinct(transit_data_clean, station_name, line, .keep_all = TRUE) %>% 
@@ -51,19 +51,21 @@ transit_data_distinct =
 * The proportion of station entrances/exits without vending allow entrance is 
 `r nrow(filter(transit_data_distinct, entry == TRUE, vending == "NO"))/nrow(filter(transit_data_distinct, vending == "NO"))`
 
-```{r transit_data_reformat}
+```{r transit_data_reformat, message = FALSE}
 ## Reformatted data so that route number and route name are distinct variables. 
 transit_data_distinct_reformat = 
   read_csv(file = "./data/NYC_Transit_Subway_Entrance_And_Exit_Data.csv") %>% 
   janitor::clean_names() %>% 
+  distinct(transit_data_clean, station_name, line, .keep_all = TRUE) %>% 
   gather(key = "route_number", value = "route", route1:route11)
 ```
 
-Of the stations that serve the A train, how many are ADA compliant?
+* There are `r nrow(filter(transit_data_distinct_reformat, route == "A"))` stations that serve the A train. Of the `r nrow(filter(transit_data_distinct_reformat, route == "A"))` stations that serve the A train, `r nrow(filter(transit_data_distinct_reformat, route == "A" & ada == TRUE))` are ADA compliant. 
 
 # **Problem 2**
-## How to include cell_cols(), keep getting error message 
-```{r}
+```{r import_datset}
+
+## Importing Mr. Trash Wheels dataset
 water_wheels_clean = 
   readxl::read_excel("./data/HealthyHarborWaterWheelTotals2018-7-28.xlsx", sheet = 1, 
                      range = "A2:N336") %>% 
@@ -87,29 +89,27 @@ precipitation_2016_clean =
   janitor::clean_names() %>% 
   mutate(year = 2016)
 
+## binding the rows from both data sets 
 precipitation_data = 
   bind_rows(precipitation_2016_clean, precipitation_2017_clean) %>% 
   mutate(month = month.name[month])
 ```
 
-## Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in both resulting datasets, and give examples of key variables. For available data, what was the total precipitation in 2017? What was the median number of sports balls in a dumpster in 2016?
-
-* The number of observations in the water_wheels_clean data set is `r nrow(water_wheels_clean)`. 
+* The number of observations in the water_wheels_clean data set is `r nrow(water_wheels_clean)`.
 * The number of observations in the precipitation data set is `r nrow(precipitation_data)`.
-* Some examples of key variables for Mr.Water Wheels are 
+* Some examples of key variables for Mr. Water Wheels are month, year, and weight_tons. Some examples of key variables for precipitation_data are month, year, and total precipitation during that year. 
+* For available data, the total precipitation in 2017 was `r sum(precipitation_2017_clean$total)` 
+* The median number of sports balls in a dumpster in 2016 is `r water_wheels_clean %>% filter(year == "2016") %>% summarize(median(sports_balls))` 
 
-What are key variables? You can choose what you want to say. 
 
-For the median, use summarize fxn 
-
-# *Problem 3*
+# **Problem 3**
 ```{r}
 # install.packages("devtools")
 devtools::install_github("p8105/p8105.datasets")
 library(p8105.datasets)
-
 data("brfss_smart2010")
 
+## creating the brfss_smart_df
 brfss_smart2010 = 
    brfss_smart2010 %>% 
    janitor::clean_names() %>% 
