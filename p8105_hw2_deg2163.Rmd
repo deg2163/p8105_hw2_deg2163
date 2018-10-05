@@ -125,6 +125,7 @@ brfss_smart2010 =
 * There are `r count(distinct(brfss_smart2010, locationdesc))` unique location included in the database
 * Every state is represented. In fact `r count(distinct(brfss_smart2010, locationabbr))` states (including Washington DC) are represented. 
 * The median of the “Excellent” response value is `r brfss_smart2010 %>% filter(year == 2002) %>% summarize(median(excellent, na.rm = TRUE))`
+* The state that is observed the most is `r count(brfss_smart2010, locationabbr) %>% filter(n == max(n))`.
 
 ```{r problem_3_answers}
 ## A histogram of “Excellent” response values in the year 2002.
